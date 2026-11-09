@@ -1,5 +1,5 @@
 from fastapi import FastAPI, Depends, HTTPException
-from fastapi.security import OAuth2PasswordBearer
+from fastapi.security import HTTPBearer
 import logging
 from datetime import datetime, timezone
 
@@ -22,7 +22,7 @@ def log_access_attempt(username, requested_department, result):
 
 app = FastAPI(title="Kani's Insurance Company API")
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
+oauth2_scheme = HTTPBearer()
 
 USERS = {
     "john_token": {
@@ -40,21 +40,25 @@ USERS = {
 }
 
 
-def get_current_user(token: str = Depends(oauth2_scheme)):
-    user = USERS.get(token)
+def get_current_user(credentials = Depends(oauth2_scheme)):
+    token = credentials.credentials
 
+    user = USERS.get(token)
     if user is None:
         raise HTTPException(
             status_code=401,
             detail="Invalid authentication token"
         )
-
     return user
 
 
 @app.get("/me")
 def read_current_user(current_user: dict = Depends(get_current_user)):
     return current_user
+
+@app.get("/")
+def home():
+    return {"message": "Insurance Company API is running"}
 
 @app.get("/department/{department_name}")
 def access_department(
