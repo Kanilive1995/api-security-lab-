@@ -1,7 +1,26 @@
 from fastapi import FastAPI, Depends, HTTPException
 from fastapi.security import OAuth2PasswordBearer
+import logging
+from datetime import datetime, timezone
 
-app = FastAPI(title="Insurance Company API")
+logging.basicConfig(
+    filename="audit.log",
+    level=logging.INFO,
+    format="%(message)s"
+)
+
+def log_access_attempt(username, requested_department, result):
+    timestamp = datetime.now(timezone.utc).isoformat()
+
+    logging.info(
+        "Timestamp=%s | User=%s | Department=%s | Result=%s",
+        timestamp,
+        username,
+        requested_department,
+        result
+    )
+
+app = FastAPI(title="Kani's Insurance Company API")
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 
@@ -42,11 +61,25 @@ def access_department(
     department_name: str,
     current_user: dict = Depends(get_current_user)
 ):
+
     if current_user["department"] != department_name:
+
+        log_access_attempt(
+            current_user["username"],
+            department_name,
+            "DENIED"
+        )
+
         raise HTTPException(
             status_code=403,
             detail="Access denied: You are not authorized for this department"
         )
+
+    log_access_attempt(
+        current_user["username"],
+        department_name,
+        "GRANTED"
+    )
 
     return {
         "message": "Access granted",
