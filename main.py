@@ -60,7 +60,10 @@ def read_current_user(current_user: dict = Depends(get_current_user)):
 def home():
     return {"message": "Insurance Company API is running"}
 
-@app.get("/department/{department_name}")
+@app.get(
+    "/department/{department_name}",
+    responses={403: {"description": "Forbidden"}}
+)
 def access_department(
     department_name: str,
     current_user: dict = Depends(get_current_user)
