@@ -22,7 +22,7 @@ def log_access_attempt(username, requested_department, result):
 
 app = FastAPI(title="Kani's Insurance Company API")
 
-oauth2_scheme = HTTPBearer()
+oauth2_scheme = HTTPBearer() #Token is static, not complete OAUTH2.0
 
 USERS = {
     "john_token": {
@@ -43,7 +43,7 @@ USERS = {
 def get_current_user(credentials = Depends(oauth2_scheme)):
     token = credentials.credentials
 
-    user = USERS.get(token)
+    user = USERS.get(token) #Validates the given token
     if user is None:
         raise HTTPException(
             status_code=401,
@@ -52,24 +52,24 @@ def get_current_user(credentials = Depends(oauth2_scheme)):
     return user
 
 
-@app.get("/me")
+@app.get("/me") #returns information about the authenticated user
 def read_current_user(current_user: dict = Depends(get_current_user)):
     return current_user
 
-@app.get("/")
+@app.get("/") #Public endpoint to test the API health/status
 def home():
     return {"message": "Insurance Company API is running"}
 
 @app.get(
-    "/department/{department_name}",
-    responses={403: {"description": "Forbidden"}}
+"/department/{department_name}",
+    responses={403: {"description": "Forbidden"}} #This creates an API endpoint that accepts a department name dynamically.
 )
 def access_department(
     department_name: str,
     current_user: dict = Depends(get_current_user)
 ):
 
-    if current_user["department"] != department_name:
+    if current_user["department"] != department_name: #Authorization logic begins here
 
         log_access_attempt(
             current_user["username"],
